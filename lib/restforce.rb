@@ -2,19 +2,17 @@ require 'faraday'
 require 'faraday_middleware'
 require 'json'
 
-require 'openssl'
-require 'base64'
-
 require 'restforce/version'
 require 'restforce/config'
 
 module Restforce
-  autoload :Collection, 'restforce/collection'
-  autoload :Middleware, 'restforce/middleware'
-  autoload :UploadIO,   'restforce/upload_io'
-  autoload :SObject,    'restforce/sobject'
-  autoload :Client,     'restforce/client'
-  autoload :Mash,       'restforce/mash'
+  autoload :SignedRequest, 'restforce/signed_request'
+  autoload :Collection,    'restforce/collection'
+  autoload :Middleware,    'restforce/middleware'
+  autoload :UploadIO,      'restforce/upload_io'
+  autoload :SObject,       'restforce/sobject'
+  autoload :Client,        'restforce/client'
+  autoload :Mash,          'restforce/mash'
 
   AuthenticationError = Class.new(StandardError)
   UnauthorizedError   = Class.new(StandardError)
@@ -34,12 +32,7 @@ module Restforce
     #
     # Returns the Hash context if the message is valid.
     def decode_signed_request(message, client_secret)
-      signature, payload = message.split('.')
-      signature = Base64.decode64(signature)
-      digest = OpenSSL::Digest::Digest.new('sha256')
-      hmac = OpenSSL::HMAC.digest(digest, client_secret, payload)
-      return nil if signature != hmac
-      JSON.parse(Base64.decode64(payload))
+      SignedRequest.decode(message, client_secret)
     end
   end
 
